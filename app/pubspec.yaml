@@ -1,0 +1,32 @@
+name: mesoterapia_facial_ai
+description: Análisis facial IA para mesoterapia sin agujas - Emprender Milagro
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  camera: ^0.10.5+9          # Cámara del dispositivo
+  image_picker: ^1.1.2        # Galería + cámara alternativa
+  http: ^1.2.1                # Llamadas al backend
+  shared_preferences: ^2.2.3  # Historial local
+  cached_network_image: ^3.3.1
+  flutter_spinkit: ^5.2.1     # Loading animado
+  percent_indicator: ^4.2.3   # Barras de progreso de score
+  permission_handler: ^11.3.1 # Permisos cámara/storage
+  url_launcher: ^6.3.0        # Abrir WhatsApp
+  intl: ^0.19.0               # Formato de fechas
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/fonts/
