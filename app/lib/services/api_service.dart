@@ -5,7 +5,7 @@ import '../models/face_analysis.dart';
 
 class ApiService {
   // Cambia por tu IP del servidor Contabo o localhost para desarrollo
-  static const String _baseUrl = 'http://TU_IP_SERVIDOR:8000';
+  static const String _baseUrl = 'https://mesoterapia-backend.nwihlm.easypanel.host';
 
   Future<FaceAnalysis> analyzePhoto(File photo) async {
     final uri = Uri.parse('$_baseUrl/api/analyze');
