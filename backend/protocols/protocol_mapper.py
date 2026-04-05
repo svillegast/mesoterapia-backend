@@ -107,13 +107,13 @@ class ProtocolMapper:
     Mapea condiciones detectadas a protocolos de tratamiento priorizados.
     """
 
-    def map(self, results: Dict, scores: Dict) -> Dict:
+    def map(self, results: Dict, scores: Dict, min_score: int = RECOMMEND_THRESHOLD) -> Dict:
         conditions = scores.get("conditions", {})
         triggered: Dict[str, float] = {}  # protocol_id → max score trigger
 
         for condition, data in conditions.items():
             score = data.get("score", 0)
-            if score < RECOMMEND_THRESHOLD:
+            if score < min_score:
                 continue
             for pid, proto in PROTOCOLS.items():
                 if condition in proto.get("indicaciones", []):
@@ -126,7 +126,7 @@ class ProtocolMapper:
             # Recopilar condiciones activas para este protocolo
             active_conditions = [
                 c for c in proto.get("indicaciones", [])
-                if conditions.get(c, {}).get("score", 0) >= RECOMMEND_THRESHOLD
+                if conditions.get(c, {}).get("score", 0) >= min_score
             ]
             explanations = [
                 CONDITION_EXPLANATIONS[c]
