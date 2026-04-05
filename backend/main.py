@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 import os
+import base64
+import numpy as np
+import cv2
 from dotenv import load_dotenv
 
 from analysis.face_detector import FaceDetector
@@ -21,6 +24,33 @@ from reports.text_report import TextReportGenerator
 from integrations.whatsapp_client import WhatsAppClient
 
 load_dotenv()
+
+
+def _make_zone_b64(crops: list) -> str:
+    """Combina recortes de zonas horizontalmente y retorna como base64 JPEG."""
+    valid = [c for c in crops if c is not None and isinstance(c, np.ndarray) and c.size > 0]
+    if not valid:
+        return ""
+    if len(valid) == 1:
+        combined = valid[0]
+    else:
+        target_h = max(c.shape[0] for c in valid)
+        resized = []
+        for c in valid:
+            h, w = c.shape[:2]
+            if h == 0:
+                continue
+            new_w = max(1, int(w * target_h / h))
+            resized.append(cv2.resize(c, (new_w, target_h)))
+        combined = np.hstack(resized) if len(resized) > 1 else resized[0]
+    h, w = combined.shape[:2]
+    if w > 480:
+        new_h = max(1, int(h * 480 / w))
+        combined = cv2.resize(combined, (480, new_h))
+    bgr = cv2.cvtColor(combined, cv2.COLOR_RGB2BGR)
+    _, buf = cv2.imencode('.jpg', bgr, [cv2.IMWRITE_JPEG_QUALITY, 82])
+    return base64.b64encode(buf.tobytes()).decode()
+
 
 app = FastAPI(title="Mesoterapia Facial AI", version="1.0.0")
 
@@ -71,6 +101,16 @@ async def analyze_face(photo: UploadFile = File(...)):
     # 2. Segmentar zonas del rostro
     zones = zone_segmenter.segment(image_rgb, landmarks)
 
+    # Generar imágenes recortadas por zona para la app
+    zone_images = {
+        "frente":      _make_zone_b64([zones.get("frente")]),
+        "ojos":        _make_zone_b64([zones.get("ojo_izq"), zones.get("ojo_der")]),
+        "mejillas":    _make_zone_b64([zones.get("mejilla_izq"), zones.get("mejilla_der")]),
+        "boca_surcos": _make_zone_b64([zones.get("boca")]),
+        "mandibula":   _make_zone_b64([zones.get("mandibula")]),
+        "cuello":      _make_zone_b64([zones.get("cuello")]),
+    }
+
     # 3. Analizar cada condición
     results = {}
 
@@ -110,6 +150,7 @@ async def analyze_face(photo: UploadFile = File(...)):
         "conditions": results,
         "treatment_plan": treatment_plan,
         "report_image_base64": report_image_b64,
+        "zone_images": zone_images,
         "whatsapp_text": whatsapp_text,
     })
 
