@@ -69,15 +69,19 @@ def _apply_age_correction(results: dict, factor: float) -> dict:
 
 
 def _clean_face_b64(image_rgb: np.ndarray, target_h: int = 700) -> str:
-    """Rostro limpio sin overlays, solo redimensionado."""
-    from PIL import Image
+    """Rostro limpio sin overlays, redimensionado y levemente mejorado."""
+    from PIL import Image, ImageEnhance
     import io as _io
     pil = Image.fromarray(image_rgb)
     ratio = target_h / pil.height
     new_w = max(1, int(pil.width * ratio))
     pil = pil.resize((new_w, target_h), Image.LANCZOS)
+    # Mejora leve: +10% brillo, +15% contraste, +10% nitidez
+    pil = ImageEnhance.Brightness(pil).enhance(1.10)
+    pil = ImageEnhance.Contrast(pil).enhance(1.15)
+    pil = ImageEnhance.Sharpness(pil).enhance(1.10)
     buf = _io.BytesIO()
-    pil.save(buf, format='JPEG', quality=90)
+    pil.save(buf, format='JPEG', quality=92)
     return base64.b64encode(buf.getvalue()).decode()
 
 
