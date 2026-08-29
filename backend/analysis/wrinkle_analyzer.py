@@ -50,14 +50,23 @@ class WrinkleAnalyzer:
         high = int(min(255, 1.33 * median))
         edges = cv2.Canny(gray, low, high)
         density = np.sum(edges > 0) / edges.size
-        score = np.clip(density / 0.15 * 100, 0, 100)
+        # Recalibrado 2026-08-28: mayor peso relativo de Canny en el score
+        # combinado (ver analyze_forehead) — se sube la sensibilidad para
+        # que un caso real de arrugas visibles no quede subestimado.
+        score = np.clip(density / 0.10 * 100, 0, 100)
         return float(score)
 
     def analyze_forehead(self, zone: np.ndarray) -> Dict:
         """Arrugas horizontales en la frente."""
         gabor_s = self._gabor_wrinkle_score(zone)
         canny_s = self._canny_line_density(zone)
-        score = gabor_s * 0.6 + canny_s * 0.4
+        # Recalibrado 2026-08-28: en un caso real confirmado por el usuario
+        # como "arrugas muy visibles", Gabor colapsó a 0 (energía cruda por
+        # debajo del piso asumido de "piel lisa") mientras Canny sí detectó
+        # señal real (43.2) — Gabor no parece confiable bajo el pipeline
+        # actual (posible interacción con CLAHE). Se reduce su peso y se
+        # sube la sensibilidad de Canny hasta tener más casos de referencia.
+        score = gabor_s * 0.3 + canny_s * 0.7
         return {"score": round(score, 1), "condition": "arrugas_frontales"}
 
     def analyze_glabella(self, zone: np.ndarray, landmarks) -> Dict:

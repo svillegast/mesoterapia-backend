@@ -36,13 +36,29 @@ class DarkCircleAnalyzer:
         lower_mean = np.mean(l_channel[h // 2:, :])
 
         diff = upper_mean - lower_mean  # positivo = zona inferior más oscura
-        score = np.clip(diff / 30 * 100, 0, 100)
+        # CORREGIDO 2026-08-28 (segunda pasada, con caso real de referencia):
+        # mismo bug de signo que perdida_volumen — 8 de 9 fotos reales daban
+        # diff NEGATIVO, así que el score siempre salía 0 sin importar la
+        # persona. Se usa valor absoluto. Divisor recalibrado contra un caso
+        # real confirmado por el usuario como "ojeras muy pronunciadas"
+        # (|diff|=71.9 -> debe caer en "Avanzada").
+        score = np.clip(abs(diff) / 80 * 100, 0, 100)
         return float(score)
 
     def _bag_score(self, region: np.ndarray) -> float:
         """
         Bolsas: detecta gradiente de sombra/luz en la zona inferior del ojo.
         Una bolsa crea una sombra horizontal característica.
+
+        AVISO 2026-08-28: en un caso real confirmado por el usuario como
+        "bolsas bastante pronunciadas", este método dio un valor crudo en la
+        parte media-baja de las 9 fotos de referencia (no la más alta) —
+        contradice la severidad real observada. Esto sugiere que el gradiente
+        de Sobel no está midiendo bien lo que es una bolsa real (puede
+        confundirse con pestañas/textura/luz), no es solo un tema de
+        calibración. NO se ajustó el divisor a ciegas — necesita más casos
+        reales con severidad conocida para decidir si este método sirve o
+        hay que rediseñarlo (similar a mandibula_indefinida).
         """
         if region is None or region.size == 0 or region.shape[0] < 20:
             return 0.0
@@ -55,7 +71,5 @@ class DarkCircleAnalyzer:
         sobelx = cv2.Sobel(lower.astype(float), cv2.CV_64F, 0, 1, ksize=3)
         gradient_mean = np.mean(np.abs(sobelx))
 
-        # Recalibrado 2026-08-28 con 8 fotos reales: divisor original (8)
-        # saturaba en 100 siempre — rango real observado 41-97.
         score = np.clip(gradient_mean / 120 * 100, 0, 100)
         return float(score)

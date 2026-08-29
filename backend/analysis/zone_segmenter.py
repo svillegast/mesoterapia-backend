@@ -63,21 +63,33 @@ class ZoneSegmenter:
         zones = {}
         for zone_name, indices in ZONE_LANDMARKS.items():
             pts = pts_all[indices]
-            zones[zone_name] = self._crop_zone(image, pts)
+            # CORREGIDO 2026-08-28: los landmarks de "ojo_izq"/"ojo_der" son
+            # el contorno del párpado (estándar de MediaPipe) — con el
+            # margen normal de 10%, el recorte apenas toca el borde del ojo
+            # y NO llega al área real de ojeras/bolsas, que está más abajo,
+            # hacia el pómulo. Detectado por el usuario probando la app real
+            # (la "zona de análisis" mostraba mayormente el ojo, no la piel
+            # de debajo). Se agrega margen extra hacia abajo solo para estas
+            # 2 zonas.
+            extra_bottom = 0.60 if zone_name in ("ojo_izq", "ojo_der") else 0.0
+            zones[zone_name] = self._crop_zone(image, pts, extra_bottom_pad=extra_bottom)
 
         return zones
 
-    def _crop_zone(self, image: np.ndarray, pts: np.ndarray) -> np.ndarray:
+    def _crop_zone(self, image: np.ndarray, pts: np.ndarray, extra_bottom_pad: float = 0.0) -> np.ndarray:
         """
         Recorta la región convexa del rostro definida por los puntos.
+        extra_bottom_pad: margen adicional hacia abajo, como fracción de la
+        altura del recorte (ej. 0.60 = 60% más de altura hacia abajo).
         """
         x, y, bw, bh = cv2.boundingRect(pts)
         # Agregar margen del 10%
         pad_x = max(int(bw * 0.10), 5)
         pad_y = max(int(bh * 0.10), 5)
+        pad_bottom_extra = int(bh * extra_bottom_pad)
         h, w = image.shape[:2]
         x1 = max(0, x - pad_x)
         y1 = max(0, y - pad_y)
         x2 = min(w, x + bw + pad_x)
-        y2 = min(h, y + bh + pad_y)
+        y2 = min(h, y + bh + pad_y + pad_bottom_extra)
         return image[y1:y2, x1:x2].copy()
