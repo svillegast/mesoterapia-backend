@@ -150,7 +150,10 @@ class SaggingAnalyzer:
         # saturando en 100 casi siempre. Nota: algunas de estas fotos podían
         # tener lentes, lo que afecta la precisión de los landmarks de ojos —
         # confirmar este ajuste con fotos sin lentes cuando se pueda.
-        score = np.clip((0.35 - ratio) / 0.25 * 100, 0, 100)
+        # Segunda pasada (mismo día): el divisor 0.25 seguia dando un score
+        # demasiado bajo para un caso real confirmado por el usuario como
+        # "moderado a mas critico" — ajustado a 0.21.
+        score = np.clip((0.35 - ratio) / 0.21 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "parpados_caidos"}
 
     def analyze_double_chin(self, landmarks) -> Dict:

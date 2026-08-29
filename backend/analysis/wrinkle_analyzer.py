@@ -103,5 +103,8 @@ class WrinkleAnalyzer:
         sq_mean = cv2.blur((gray.astype(float) ** 2), (5, 5))
         variance = sq_mean - mean ** 2
         roughness = np.mean(np.sqrt(np.clip(variance, 0, None)))
-        score = np.clip(roughness / 25 * 100, 0, 100)
+        # Recalibrado 2026-08-28: divisor original (25) daba score demasiado
+        # bajo (35) para un caso real que el usuario confirmó que debía ser
+        # "un poco más" — ajustado a 17.
+        score = np.clip(roughness / 17 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "textura_irregular"}

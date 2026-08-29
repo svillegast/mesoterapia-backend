@@ -70,5 +70,8 @@ class LuminosityAnalyzer:
         # midió 17-34, y el divisor original (15) saturaba el score en 100
         # siempre. Igual que arriba, calibración inicial a falta de casos
         # reales confirmados de tono desigual vs. uniforme.
-        score = np.clip(variance / 40 * 100, 0, 100)
+        # Segunda pasada (2026-08-28): el divisor 40 daba un score demasiado
+        # bajo (25) para un caso confirmado por el usuario como "mínimo
+        # Moderado" — ajustado a 18.
+        score = np.clip(variance / 18 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "tono_desigual"}

@@ -32,8 +32,13 @@ class SpotAnalyzer:
         # sombra suave por mala iluminación no cruce el umbral.
         mean_l = np.mean(l_channel)
         std_l = np.std(l_channel)
-        threshold = mean_l - 2.5 * std_l
-        min_absolute_drop = 18  # unidades LAB L — ajustar con fotos de referencia
+        # Recalibrado 2026-08-28 (segunda pasada): el umbral de 2.5 dejó de
+        # detectar CUALQUIER mancha en un caso real con pecas moderadas
+        # confirmadas por el usuario (0 píxeles detectados) — demasiado
+        # estricto. Bajado a un punto intermedio entre el original (1.5,
+        # detectaba de más) y el de esta mañana (2.5, no detectaba nada).
+        threshold = mean_l - 2.1 * std_l
+        min_absolute_drop = 13  # unidades LAB L — ajustar con más fotos de referencia
 
         dark_mask = l_channel < np.minimum(threshold, mean_l - min_absolute_drop)
         spot_ratio = np.sum(dark_mask) / dark_mask.size
