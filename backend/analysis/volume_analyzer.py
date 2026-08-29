@@ -27,5 +27,11 @@ class VolumeAnalyzer:
         # Diferencia: pómulo hundido → mayor diferencia con la nariz
         z_diff = nose_z - avg_cheek_z  # positivo = mejilla más hundida
 
-        score = np.clip(z_diff / 0.06 * 100, 0, 100)
+        # CORREGIDO 2026-08-28: la migración a la API moderna de MediaPipe
+        # (hecha hoy, ver face_detector.py) cambió la convención de signo del
+        # eje Z. En las 7 fotos reales probadas, z_diff salió NEGATIVO en las
+        # 7 — con la fórmula original eso siempre daba score 0 (nunca
+        # detectaba pérdida de volumen, para nadie). Se usa valor absoluto y
+        # se recalibra el divisor con el rango real observado (0.09-0.29).
+        score = np.clip(abs(z_diff) / 0.35 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "perdida_volumen"}

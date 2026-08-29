@@ -64,7 +64,9 @@ class SaggingAnalyzer:
         z_depth_r = abs(nl_r.z - nose.z)
         z_avg = (z_depth_l + z_depth_r) / 2
 
-        score = np.clip(z_avg / 0.04 * 100, 0, 100)
+        # Recalibrado 2026-08-28 con 7 fotos reales: divisor original (0.04)
+        # saturaba en 100 siempre — rango real observado 0.04-0.27.
+        score = np.clip(z_avg / 0.30 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "surcos_nasogenianos"}
 
     def analyze_marionette(self, landmarks) -> Dict:
@@ -79,7 +81,9 @@ class SaggingAnalyzer:
         drop_r = mar_r.y - corner_r.y
         avg_drop = (drop_l + drop_r) / 2
 
-        score = np.clip(avg_drop / 0.03 * 100, 0, 100)
+        # Recalibrado 2026-08-28: divisor original (0.03) saturaba en 100 casi
+        # siempre — rango real observado -0.01 a 0.09.
+        score = np.clip(avg_drop / 0.10 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "lineas_marioneta"}
 
     def analyze_cheek_sagging(self, landmarks) -> Dict:
@@ -94,7 +98,9 @@ class SaggingAnalyzer:
         slope_r = ch_r_low.y - ch_r_h.y
         avg_slope = (slope_l + slope_r) / 2
 
-        score = np.clip(avg_slope / 0.12 * 100, 0, 100)
+        # Recalibrado 2026-08-28: divisor original (0.12) saturaba en 100 casi
+        # siempre — rango real observado 0.09-0.25.
+        score = np.clip(avg_slope / 0.35 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "mejillas_caidas"}
 
     def analyze_jawline(self, landmarks) -> Dict:
@@ -111,6 +117,17 @@ class SaggingAnalyzer:
         jaw_width = _dist(jaw_l, jaw_r)
         face_width = jaw_width  # normalizado por sí mismo
 
+        # AVISO 2026-08-28: en 7 fotos reales, `deviation` salió siempre entre
+        # 0.13-0.51 — muy por encima del 0.05 que la fórmula asume como
+        # "mandíbula bien definida". El mentón normalmente está bien por
+        # debajo de la línea jaw_l/jaw_r, así que un valor alto de por sí no
+        # necesariamente indica mala definición — el diseño de esta métrica
+        # parece no medir lo que se pretendía, no es solo un tema de
+        # divisor. NO se recalibra a ciegas sin un caso de referencia real
+        # (alguien con mandíbula claramente definida vs. difusa para
+        # comparar) — hoy siempre da 0, lo cual no perjudica al cliente,
+        # pero tampoco es un dato confiable. Revisar con más cuidado antes
+        # de usar este condition en producción.
         score = np.clip((0.05 - deviation) / 0.05 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "mandibula_indefinida"}
 
@@ -128,8 +145,12 @@ class SaggingAnalyzer:
 
         ratio = avg_open / (avg_width + 1e-6)
 
-        # Ratio ideal ~0.35-0.40. Menor = más caído
-        score = np.clip((0.40 - ratio) / 0.20 * 100, 0, 100)
+        # Recalibrado 2026-08-28: el "ideal" original (0.35-0.40) no coincidió
+        # con ninguna de las 7 fotos reales (rango observado 0.15-0.31),
+        # saturando en 100 casi siempre. Nota: algunas de estas fotos podían
+        # tener lentes, lo que afecta la precisión de los landmarks de ojos —
+        # confirmar este ajuste con fotos sin lentes cuando se pueda.
+        score = np.clip((0.35 - ratio) / 0.25 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "parpados_caidos"}
 
     def analyze_double_chin(self, landmarks) -> Dict:
@@ -142,5 +163,7 @@ class SaggingAnalyzer:
         y_diff = abs(throat.y - chin.y)
 
         ratio = z_diff / (y_diff + 1e-6)
-        score = np.clip(ratio / 0.5 * 100, 0, 100)
+        # Recalibrado 2026-08-28: divisor original (0.5) saturaba en 100 casi
+        # siempre — rango real observado 0.47-2.78.
+        score = np.clip(ratio / 3.5 * 100, 0, 100)
         return {"score": round(float(score), 1), "condition": "doble_menton"}

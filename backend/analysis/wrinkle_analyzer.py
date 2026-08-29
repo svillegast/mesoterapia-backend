@@ -29,13 +29,25 @@ class WrinkleAnalyzer:
         score = np.clip((raw - 0.005) / 0.07 * 100, 0, 100)
         return float(score)
 
-    def _canny_line_density(self, region: np.ndarray, low=30, high=80) -> float:
-        """Densidad de bordes finos (líneas de arrugas) via Canny."""
+    def _canny_line_density(self, region: np.ndarray) -> float:
+        """
+        Densidad de bordes finos (líneas de arrugas) via Canny.
+
+        Antes usaba umbrales fijos (30/80), muy sensibles al contraste/
+        exposición de la foto: luz dura genera más "bordes" falsos y una foto
+        borrosa u oscura oculta arrugas reales. Ahora los umbrales se calculan
+        a partir de la mediana de intensidad de la propia región (Canny
+        automático), para que el detector se adapte a la exposición de cada
+        foto en vez de asumir siempre el mismo nivel de contraste.
+        """
         if region is None or region.size == 0:
             return 0.0
         gray = cv2.cvtColor(region, cv2.COLOR_RGB2GRAY) if region.ndim == 3 else region
         if gray.shape[0] < 10 or gray.shape[1] < 10:
             return 0.0
+        median = float(np.median(gray))
+        low = int(max(0, 0.66 * median))
+        high = int(min(255, 1.33 * median))
         edges = cv2.Canny(gray, low, high)
         density = np.sum(edges > 0) / edges.size
         score = np.clip(density / 0.15 * 100, 0, 100)

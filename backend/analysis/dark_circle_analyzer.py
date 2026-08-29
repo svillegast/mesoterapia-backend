@@ -55,5 +55,7 @@ class DarkCircleAnalyzer:
         sobelx = cv2.Sobel(lower.astype(float), cv2.CV_64F, 0, 1, ksize=3)
         gradient_mean = np.mean(np.abs(sobelx))
 
-        score = np.clip(gradient_mean / 8 * 100, 0, 100)
+        # Recalibrado 2026-08-28 con 8 fotos reales: divisor original (8)
+        # saturaba en 100 siempre — rango real observado 41-97.
+        score = np.clip(gradient_mean / 120 * 100, 0, 100)
         return float(score)

@@ -23,12 +23,19 @@ class SpotAnalyzer:
         lab = cv2.cvtColor(region, cv2.COLOR_RGB2LAB)
         l_channel = lab[:, :, 0].astype(float)
 
-        # Manchas = píxeles con luminancia significativamente más baja que la media
+        # Manchas = píxeles con luminancia significativamente más baja que la media.
+        # Antes usaba 1.5 desviaciones estándar: con una distribución normal eso
+        # marca ~6-7% de CUALQUIER imagen como "mancha" sin importar si hay
+        # manchas reales, y sombras por luz direccional (una sola fuente de luz)
+        # se contaban igual que una mancha real. Se sube el umbral estadístico y
+        # se exige además una caída absoluta mínima en luminancia, para que una
+        # sombra suave por mala iluminación no cruce el umbral.
         mean_l = np.mean(l_channel)
         std_l = np.std(l_channel)
-        threshold = mean_l - 1.5 * std_l
+        threshold = mean_l - 2.5 * std_l
+        min_absolute_drop = 18  # unidades LAB L — ajustar con fotos de referencia
 
-        dark_mask = l_channel < threshold
+        dark_mask = l_channel < np.minimum(threshold, mean_l - min_absolute_drop)
         spot_ratio = np.sum(dark_mask) / dark_mask.size
 
         # Eliminar ruido: solo contar clusters suficientemente grandes

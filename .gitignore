@@ -1,0 +1,5 @@
+backend/venv_test/
+backend/test_batch_noage.py
+test_photos/
+*.pyc
+__pycache__/
