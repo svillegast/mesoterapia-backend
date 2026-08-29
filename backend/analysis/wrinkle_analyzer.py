@@ -50,32 +50,51 @@ class WrinkleAnalyzer:
         gray = cv2.cvtColor(region, cv2.COLOR_RGB2GRAY) if region.ndim == 3 else region
         if gray.shape[0] < 10 or gray.shape[1] < 10:
             return 0.0
-        median = float(np.median(gray))
-        low = int(max(0, 0.66 * median))
-        high = int(min(255, 1.33 * median))
-        edges = cv2.Canny(gray, low, high)
-        density = np.sum(edges > 0) / edges.size
+        density = self._canny_raw_density(region)
         # Recalibrado 2026-08-28: mayor peso relativo de Canny en el score
         # combinado (ver analyze_forehead) — se sube la sensibilidad para
         # que un caso real de arrugas visibles no quede subestimado.
         score = np.clip(density / 0.10 * 100, 0, 100)
         return float(score)
 
+    def _canny_raw_density(self, region: np.ndarray) -> float:
+        """Densidad de bordes Canny sin escalar (0.0-1.0 aprox), para que
+        cada condición aplique su propio divisor calibrado por separado."""
+        if region is None or region.size == 0:
+            return 0.0
+        gray = cv2.cvtColor(region, cv2.COLOR_RGB2GRAY) if region.ndim == 3 else region
+        if gray.shape[0] < 10 or gray.shape[1] < 10:
+            return 0.0
+        median = float(np.median(gray))
+        low = int(max(0, 0.66 * median))
+        high = int(min(255, 1.33 * median))
+        edges = cv2.Canny(gray, low, high)
+        return float(np.sum(edges > 0) / edges.size)
+
     def analyze_forehead(self, zone: np.ndarray) -> Dict:
         """Arrugas horizontales en la frente."""
+        # AVISO 2026-08-29: NI Gabor NI Canny distinguen bien esta zona —
+        # comparando un caso real de 59 años con arrugas confirmadas contra
+        # uno de 19 años sin arrugas, AMBAS señales salieron invertidas
+        # (más "arruga" detectada en la piel joven). No se puede calibrar
+        # esto con un divisor, el método completo necesita rediseño
+        # (probablemente un filtro direccional específico para líneas
+        # horizontales, no densidad de bordes genérica). Mientras tanto se
+        # amortigua fuertemente el resultado para no generar falsos
+        # positivos en piel joven, aceptando que también subestima casos
+        # reales hasta que se resuelva bien.
         gabor_s = self._gabor_wrinkle_score(zone)
         canny_s = self._canny_line_density(zone)
-        # Recalibrado 2026-08-28: en un caso real confirmado por el usuario
-        # como "arrugas muy visibles", Gabor colapsó a 0 (energía cruda por
-        # debajo del piso asumido de "piel lisa") mientras Canny sí detectó
-        # señal real (43.2) — Gabor no parece confiable bajo el pipeline
-        # actual (posible interacción con CLAHE). Se reduce su peso y se
-        # sube la sensibilidad de Canny hasta tener más casos de referencia.
-        score = gabor_s * 0.3 + canny_s * 0.7
+        score = (gabor_s * 0.3 + canny_s * 0.7) * 0.35
         return {"score": round(score, 1), "condition": "arrugas_frontales"}
 
     def analyze_glabella(self, zone: np.ndarray, landmarks) -> Dict:
         """Líneas del entrecejo usando landmarks de profundidad Z."""
+        # AVISO 2026-08-29: igual que arrugas_frontales — ni Gabor ni la
+        # profundidad Z distinguieron bien entre el caso de 59 años (arrugas
+        # confirmadas) y el de 19 años (sin arrugas); la Z incluso salió
+        # invertida (mayor "profundidad" en la piel joven). Amortiguado
+        # fuertemente hasta rediseñar con más casos reales.
         gabor_s = self._gabor_wrinkle_score(zone)
 
         # Usar coordenada Z de landmarks del entrecejo (9, 107, 66)
@@ -83,24 +102,27 @@ class WrinkleAnalyzer:
         z_range = max(z_vals) - min(z_vals)
         depth_score = np.clip(abs(z_range) / 0.05 * 100, 0, 100)
 
-        # Recalibrado 2026-08-29: al subir la escala compartida de Gabor
-        # (ver _gabor_wrinkle_score), esta condición se paso de rango en un
-        # caso que el usuario ya habia confirmado como correcto (54) —
-        # se reduce el peso de Gabor aqui para no dañar lo que ya funcionaba.
-        score = gabor_s * 0.2 + float(depth_score) * 0.8
+        score = (gabor_s * 0.2 + float(depth_score) * 0.8) * 0.35
         return {"score": round(score, 1), "condition": "lineas_entrecejo"}
 
     def analyze_crow_feet(self, zone_l: np.ndarray, zone_r: np.ndarray) -> Dict:
         """Patas de gallo en zona lateral de los ojos."""
-        score_l = self._gabor_wrinkle_score(zone_l)
-        score_r = self._gabor_wrinkle_score(zone_r)
-        score = (score_l + score_r) / 2
-        return {"score": round(score, 1), "condition": "patas_gallo"}
+        # CORREGIDO 2026-08-29: Gabor daba resultado invertido (mayor en
+        # piel joven sin arrugas que en caso real con patas de gallo
+        # confirmadas) — no es de fiar aqui. Canny SI dio la direccion
+        # correcta en ambos casos de referencia, se usa en su lugar.
+        d_l = self._canny_raw_density(zone_l)
+        d_r = self._canny_raw_density(zone_r)
+        score = np.clip((d_l + d_r) / 2 / 0.30 * 100, 0, 100)
+        return {"score": round(float(score), 1), "condition": "patas_gallo"}
 
     def analyze_perioral(self, zone: np.ndarray) -> Dict:
         """Arrugas periorales (código de barras alrededor de labios)."""
-        score = self._gabor_wrinkle_score(zone)
-        return {"score": round(score, 1), "condition": "arrugas_periorales"}
+        # CORREGIDO 2026-08-29: mismo cambio que patas de gallo — Gabor no
+        # es confiable, se usa Canny en su lugar.
+        density = self._canny_raw_density(zone)
+        score = np.clip(density / 0.18 * 100, 0, 100)
+        return {"score": round(float(score), 1), "condition": "arrugas_periorales"}
 
     def analyze_texture(self, image: np.ndarray, landmarks) -> Dict:
         """Textura global irregular usando varianza local."""
