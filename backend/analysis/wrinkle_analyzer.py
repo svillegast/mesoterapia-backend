@@ -25,8 +25,13 @@ class WrinkleAnalyzer:
             energies.append(np.mean(np.abs(filt_real)))
 
         raw = np.max(energies)
-        # Normalizar empíricamente: ~0.01 = piel lisa, ~0.08 = arrugas profundas
-        score = np.clip((raw - 0.005) / 0.07 * 100, 0, 100)
+        # Recalibrado 2026-08-29: la escala original (0.01=piel lisa,
+        # 0.08=arrugas profundas) no se parece nada a los valores reales —
+        # en 2 casos confirmados con arrugas/patas de gallo visibles, el
+        # crudo salio 0.0021-0.0024, muy por debajo del piso asumido de
+        # 0.005. Esta funcion se usa en frente, entrecejo, patas de gallo y
+        # periorales — el ajuste mejora las 4 a la vez.
+        score = np.clip(raw / 0.005 * 100, 0, 100)
         return float(score)
 
     def _canny_line_density(self, region: np.ndarray) -> float:
@@ -78,7 +83,11 @@ class WrinkleAnalyzer:
         z_range = max(z_vals) - min(z_vals)
         depth_score = np.clip(abs(z_range) / 0.05 * 100, 0, 100)
 
-        score = gabor_s * 0.5 + float(depth_score) * 0.5
+        # Recalibrado 2026-08-29: al subir la escala compartida de Gabor
+        # (ver _gabor_wrinkle_score), esta condición se paso de rango en un
+        # caso que el usuario ya habia confirmado como correcto (54) —
+        # se reduce el peso de Gabor aqui para no dañar lo que ya funcionaba.
+        score = gabor_s * 0.2 + float(depth_score) * 0.8
         return {"score": round(score, 1), "condition": "lineas_entrecejo"}
 
     def analyze_crow_feet(self, zone_l: np.ndarray, zone_r: np.ndarray) -> Dict:
