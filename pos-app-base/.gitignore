@@ -1,0 +1,22 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+.metadata
+build/
+*.iml
+*.lock
+
+# IDE
+.idea/
+
+# Plataformas (se generan con `flutter create .`)
+android/
+ios/
+web/
+linux/
+macos/
+windows/

@@ -1,5 +1,4 @@
 import '../models/gasto.dart';
-import '../models/venta.dart';
 import 'database_service.dart';
 
 class ResultadoAnalisis {

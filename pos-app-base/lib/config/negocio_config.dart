@@ -13,4 +13,9 @@ class NegocioConfig {
 
   /// A partir de esta cantidad se aplica el precio de mayorista.
   static const int cantidadMinimaMayoristaPorDefecto = 12;
+
+  /// true = el negocio solo vende al consumidor final (un solo precio por
+  /// producto, sin precio de mayorista). Poner en false para negocios que
+  /// sí venden por volumen (ferretería, plastifería al por mayor, etc.).
+  static const bool ventaSoloConsumidorFinal = false;
 }

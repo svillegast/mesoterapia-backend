@@ -99,8 +99,9 @@ class _FormularioProductoState extends State<_FormularioProducto> {
       id: widget.existente?.id,
       nombre: _nombreCtrl.text.trim(),
       precioUnidad: double.tryParse(_precioCtrl.text) ?? 0,
-      precioMayorista: double.tryParse(_precioMayoristaCtrl.text),
-      cantidadMinimaMayorista: int.tryParse(_cantidadMinimaCtrl.text),
+      precioMayorista: NegocioConfig.ventaSoloConsumidorFinal ? null : double.tryParse(_precioMayoristaCtrl.text),
+      cantidadMinimaMayorista:
+          NegocioConfig.ventaSoloConsumidorFinal ? null : int.tryParse(_cantidadMinimaCtrl.text),
       stock: int.tryParse(_stockCtrl.text) ?? 0,
     );
     await DatabaseService.instance.guardarProducto(producto);
@@ -129,34 +130,36 @@ class _FormularioProductoState extends State<_FormularioProducto> {
           TextField(
             controller: _precioCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Precio por ${NegocioConfig.etiquetaUnidad}',
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _precioMayoristaCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Precio al por mayor (opcional)',
-                    border: OutlineInputBorder(),
+          if (!NegocioConfig.ventaSoloConsumidorFinal) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _precioMayoristaCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Precio al por mayor (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _cantidadMinimaCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Desde cuántos', border: OutlineInputBorder()),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _cantidadMinimaCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Desde cuántos', border: OutlineInputBorder()),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           TextField(
             controller: _stockCtrl,
