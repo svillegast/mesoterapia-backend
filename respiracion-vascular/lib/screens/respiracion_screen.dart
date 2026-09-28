@@ -416,6 +416,7 @@ class _SesionRondasView extends StatefulWidget {
 
 class _SesionRondasViewState extends State<_SesionRondasView> with TickerProviderStateMixin {
   late final AnimationController _bombeoController;
+  late final AnimationController _flujoController;
   late final DateTime _horaInicio;
 
   int _rondaActual = 1;
@@ -435,6 +436,8 @@ class _SesionRondasViewState extends State<_SesionRondasView> with TickerProvide
       vsync: this,
       duration: Duration(milliseconds: widget.tecnica.duracionPumpMs),
     );
+    _flujoController = AnimationController(vsync: this, duration: const Duration(seconds: 2))
+      ..repeat();
     _iniciarBombeo();
   }
 
@@ -514,12 +517,14 @@ class _SesionRondasViewState extends State<_SesionRondasView> with TickerProvide
     _pumpTimer?.cancel();
     _descansoTimer?.cancel();
     _bombeoController.stop();
+    _flujoController.stop();
   }
 
   @override
   void dispose() {
     _detenerTodo();
     _bombeoController.dispose();
+    _flujoController.dispose();
     super.dispose();
   }
 
@@ -539,17 +544,40 @@ class _SesionRondasViewState extends State<_SesionRondasView> with TickerProvide
         ),
       ),
       body: AnimatedBuilder(
-        animation: _bombeoController,
+        animation: Listenable.merge([_bombeoController, _flujoController]),
         builder: (context, _) {
           final dilatacion =
               _fase == _FaseRonda.bombeo ? 0.25 + _bombeoController.value * 0.6 : 0.35;
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Ronda $_rondaActual de ${widget.numRondas}',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  children: [
+                    Text(
+                      'Ronda $_rondaActual de ${widget.numRondas}',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(widget.numRondas, (i) {
+                        final completada = i + 1 < _rondaActual;
+                        final actual = i + 1 == _rondaActual;
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: actual ? 14 : 10,
+                          height: actual ? 14 : 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: completada || actual
+                                ? colorBase
+                                : colorBase.withValues(alpha: 0.25),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
@@ -582,7 +610,7 @@ class _SesionRondasViewState extends State<_SesionRondasView> with TickerProvide
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                 child: Column(
                   children: [
                     Text(
@@ -592,12 +620,51 @@ class _SesionRondasViewState extends State<_SesionRondasView> with TickerProvide
                       style: Theme.of(context).textTheme.headlineSmall,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
-                    if (_fase == _FaseRonda.bombeo)
-                      Text('$_pumpsHechos / ${widget.tecnica.pumpsPorRonda} bombeos')
-                    else
+                    const SizedBox(height: 10),
+                    if (_fase == _FaseRonda.bombeo) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: _pumpsHechos / widget.tecnica.pumpsPorRonda,
+                          minHeight: 8,
+                          backgroundColor: colorBase.withValues(alpha: 0.15),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text('$_pumpsHechos / ${widget.tecnica.pumpsPorRonda} bombeos'),
+                    ] else ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: 1 -
+                              (_segundosDescansoRestantes / widget.tecnica.descansoRondaSegundos)
+                                  .clamp(0.0, 1.0),
+                          minHeight: 8,
+                          backgroundColor: colorBase.withValues(alpha: 0.15),
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       Text('$_segundosDescansoRestantes s de descanso'),
+                    ],
                   ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: 100,
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: CustomPaint(
+                  painter: VasoSanguineoPainter(
+                    dilatacion: dilatacion,
+                    faseFlujo: _flujoController.value,
+                    colorBase: colorBase,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
