@@ -219,12 +219,39 @@ class _SesionActivaViewState extends State<_SesionActivaView> with TickerProvide
                   child: Transform.scale(
                     scale: 0.7 + dilatacion * 0.5,
                     child: Container(
-                      width: 180,
-                      height: 180,
+                      width: 200,
+                      height: 200,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: colorBase.withValues(alpha: 0.15 + dilatacion * 0.25),
-                        border: Border.all(color: colorBase, width: 3),
+                        gradient: RadialGradient(
+                          colors: [
+                            colorBase.withValues(alpha: 0.55 + dilatacion * 0.25),
+                            colorBase.withValues(alpha: 0.22 + dilatacion * 0.18),
+                            colorBase.withValues(alpha: 0.05),
+                          ],
+                          stops: const [0.0, 0.6, 1.0],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorBase.withValues(alpha: 0.35 + dilatacion * 0.25),
+                            blurRadius: 30 + dilatacion * 30,
+                            spreadRadius: 4 + dilatacion * 10,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.25 + dilatacion * 0.25),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -237,9 +264,14 @@ class _SesionActivaViewState extends State<_SesionActivaView> with TickerProvide
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
-              SizedBox(
-                height: 90,
+              Container(
+                height: 100,
                 width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: CustomPaint(
                   painter: VasoSanguineoPainter(
                     dilatacion: dilatacion,
