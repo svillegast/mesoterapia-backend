@@ -1,0 +1,66 @@
+# Respiración Vascular
+
+App personal de respiración guiada enfocada en bienestar vascular (óxido
+nítrico, respiración nasal, coherencia cardíaca). Uso personal, sin fines
+de publicación en tiendas por ahora — no hace afirmaciones médicas ni
+diagnósticas.
+
+## Fase 1 (implementada)
+
+- **Respirar**: sesiones guiadas de dos técnicas (Respiración Cadenciada
+  5.5s/5.5s, Tarareo/Humming 4s/7s) con animación de un vaso sanguíneo que
+  se dilata y contrae según el ritmo, y partículas que representan el
+  flujo. Duración seleccionable (5/10/15 min).
+- **Prueba BOLT**: cronómetro para el autoregistro de tolerancia a retener
+  la respiración, con historial.
+- **Progreso**: racha de días consecutivos, minutos totales practicados,
+  sesiones completadas, y niveles (Activación Endotelial → Flexibilidad
+  Vascular → Máxima Oxigenación Tisular → Resistencia Hipóxica).
+- **Consejos de práctica**: frecuencia recomendada, duración progresiva,
+  orientación general por edad y notas de constancia — como guía general
+  de bienestar, no prescripción médica.
+- **Descargo de responsabilidad**: se muestra una sola vez en el primer
+  uso (guardado con `shared_preferences`), dejando claro que no es un
+  dispositivo médico.
+
+Todo funciona 100% local (SQLite vía `sqflite`), sin servidor ni cuenta.
+
+## Arquitectura
+
+- `lib/models/` — `TecnicaRespiracion`, `Sesion`, `PruebaBolt`.
+- `lib/services/` — `DatabaseService` (SQLite), `ProgresoService`
+  (cálculo de racha y niveles).
+- `lib/widgets/vaso_sanguineo_painter.dart` — `CustomPainter` de la
+  animación del vaso sanguíneo.
+- `lib/screens/` — pantallas de cada módulo.
+- `lib/utils/formato_fecha.dart` — formateo de fechas en español sin
+  depender del paquete `intl` (se evitó por el riesgo de necesitar
+  `initializeDateFormatting` antes de usarse, que no se puede probar en
+  este entorno sin SDK de Android).
+
+## Fase 2 (pendiente, no implementada)
+
+- **Medición real de HRV/SpO2 vía ESP32 + MAX30102**: en vez de estimar
+  el pulso con la cámara del teléfono (PPG por cámara, impreciso), el
+  usuario ya tiene un proyecto propio con ESP32 + sensor MAX30102. La
+  idea es que el ESP32 lea el sensor y transmita los datos al teléfono
+  por Bluetooth Low Energy (BLE), y la app los reciba con el paquete
+  `flutter_blue_plus` (o similar) para mostrar HRV/SpO2 reales durante
+  la sesión de respiración, en vez de un estimado por cámara.
+  - Requiere: firmware del ESP32 exponiendo un servicio BLE (GATT) con
+    las lecturas del MAX30102, y en la app un servicio `BleService` que
+    escanee, se conecte y reciba las lecturas.
+  - Se deja pendiente hasta tener el firmware del ESP32 listo y probado
+    por separado.
+- Notificaciones locales para recordar la sesión diaria (ya está la
+  dependencia `flutter_local_notifications` instalada, falta la lógica).
+- Posible gráfico histórico de duración de BOLT en el tiempo.
+
+## Validación
+
+- `flutter analyze`: sin issues.
+- `flutter test`: pasa.
+- No se pudo compilar un APK real ni probar la app corriendo, porque el
+  entorno de desarrollo no tiene acceso al SDK de Android (red
+  bloqueada hacia `dl.google.com`). Para probarla de verdad hay que
+  correr `flutter run` en un equipo con Android Studio/SDK instalado.
