@@ -7,10 +7,21 @@ diagnósticas.
 
 ## Fase 1 (implementada)
 
-- **Respirar**: sesiones guiadas de dos técnicas (Respiración Cadenciada
-  5.5s/5.5s, Tarareo/Humming 4s/7s) con animación de un vaso sanguíneo que
-  se dilata y contrae según el ritmo, y partículas que representan el
-  flujo. Duración seleccionable (5/10/15 min).
+- **Respirar**: dos categorías de técnicas.
+  - *Calmante*: Respiración Cadenciada (5.5s/5.5s) y Tarareo/Humming
+    (4s/7s), en sesión continua con duración seleccionable (5/10/15
+    min) y animación de un vaso sanguíneo que se dilata y contrae según
+    el ritmo, con partículas de flujo.
+  - *Abdominal intensa*: Kapalabhati y Agnisar Kriya, técnicas por
+    rondas (bombeos abdominales rápidos + descanso, 1-5 rondas
+    configurables) asociadas en la tradición del yoga a estimular los
+    órganos abdominales (páncreas, hígado, estómago). Antes de poder
+    empezar, la app muestra las contraindicaciones de cada técnica
+    (embarazo, hipertensión no controlada, hernia, cirugía abdominal
+    reciente, problemas cardíacos, etc.) y exige marcar una casilla de
+    "las leí y no tengo ninguna" — no son afirmaciones médicas, son
+    prácticas de bienestar con evidencia preliminar/tradicional, no
+    clínica sólida.
 - **Prueba BOLT**: cronómetro para el autoregistro de tolerancia a retener
   la respiración, con historial.
 - **Progreso**: racha de días consecutivos, minutos totales practicados,

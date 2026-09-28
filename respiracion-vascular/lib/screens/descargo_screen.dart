@@ -42,6 +42,14 @@ class DescargoScreen extends StatelessWidget {
                     'consulta a tu médico antes de usar esta app. Detén la práctica si '
                     'sientes mareo, molestia o cualquier síntoma inusual.',
                   ),
+                  SizedBox(height: 12),
+                  Text(
+                    'Las técnicas de "Respiración abdominal intensa" (Kapalabhati, Agnisar '
+                    'Kriya) son más avanzadas y tienen contraindicaciones específicas '
+                    '(embarazo, hipertensión no controlada, hernia, cirugía abdominal '
+                    'reciente, entre otras) que se muestran antes de practicarlas. Léelas '
+                    'con atención cada vez.',
+                  ),
                 ],
               ),
             ),
