@@ -22,6 +22,13 @@ diagnósticas.
 - **Descargo de responsabilidad**: se muestra una sola vez en el primer
   uso (guardado con `shared_preferences`), dejando claro que no es un
   dispositivo médico.
+- **Recordatorios (alarma)**: dos recordatorios diarios configurables
+  (mañana/noche), con hora elegible por el usuario. Usa
+  `flutter_local_notifications` en modo alarma exacta (sonido,
+  vibración, categoría `alarm`, se puede mostrar con pantalla
+  bloqueada) — no una notificación silenciosa. Se reprograma
+  automáticamente cada vez que se abre la app, como respaldo por si el
+  sistema no conserva la alarma tras un reinicio.
 
 Todo funciona 100% local (SQLite vía `sqflite`), sin servidor ni cuenta.
 
@@ -33,6 +40,8 @@ Todo funciona 100% local (SQLite vía `sqflite`), sin servidor ni cuenta.
 - `lib/widgets/vaso_sanguineo_painter.dart` — `CustomPainter` de la
   animación del vaso sanguíneo.
 - `lib/screens/` — pantallas de cada módulo.
+- `lib/services/notificaciones_service.dart` — programación de las
+  alarmas diarias con `flutter_local_notifications` + `timezone`.
 - `lib/utils/formato_fecha.dart` — formateo de fechas en español sin
   depender del paquete `intl` (se evitó por el riesgo de necesitar
   `initializeDateFormatting` antes de usarse, que no se puede probar en
@@ -52,9 +61,13 @@ Todo funciona 100% local (SQLite vía `sqflite`), sin servidor ni cuenta.
     escanee, se conecte y reciba las lecturas.
   - Se deja pendiente hasta tener el firmware del ESP32 listo y probado
     por separado.
-- Notificaciones locales para recordar la sesión diaria (ya está la
-  dependencia `flutter_local_notifications` instalada, falta la lógica).
 - Posible gráfico histórico de duración de BOLT en el tiempo.
+- Nota sobre el permiso de "Alarmas y recordatorios" (Android 12+): la
+  app lo solicita al activar un recordatorio, pero como no se puede
+  probar en este entorno (sin SDK de Android), conviene verificar en un
+  teléfono real que el diálogo del sistema aparece y que, si el usuario
+  lo niega, la alarma exacta cae de forma segura a una notificación
+  normal en vez de fallar silenciosamente.
 
 ## Validación
 

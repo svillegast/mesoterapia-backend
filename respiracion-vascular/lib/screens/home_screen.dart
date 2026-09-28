@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'bolt_screen.dart';
 import 'consejos_screen.dart';
 import 'progreso_screen.dart';
+import 'recordatorios_screen.dart';
 import 'respiracion_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -47,6 +48,15 @@ class HomeScreen extends StatelessWidget {
             subtitulo: 'Frecuencia, duración y orientación por edad',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ConsejosScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _TarjetaModulo(
+            icono: Icons.alarm,
+            titulo: 'Recordatorios',
+            subtitulo: 'Alarma diaria para no olvidar tu sesión',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RecordatoriosScreen()),
             ),
           ),
         ],

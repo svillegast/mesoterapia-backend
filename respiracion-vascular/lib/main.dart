@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/descargo_screen.dart';
 import 'screens/home_screen.dart';
+import 'services/notificaciones_service.dart';
 
 const _claveDescargoAceptado = 'descargo_aceptado';
 
@@ -40,12 +41,40 @@ class _ArranqueState extends State<_Arranque> {
   void initState() {
     super.initState();
     _verificar();
+    _reprogramarRecordatorios();
   }
 
   Future<void> _verificar() async {
     final prefs = await SharedPreferences.getInstance();
     final aceptado = prefs.getBool(_claveDescargoAceptado) ?? false;
     if (mounted) setState(() => _descargoAceptado = aceptado);
+  }
+
+  /// Vuelve a programar los recordatorios activos cada vez que se abre la
+  /// app, como respaldo por si el sistema no los conservó tras un reinicio.
+  Future<void> _reprogramarRecordatorios() async {
+    await NotificacionesService.instance.init();
+    final prefs = await SharedPreferences.getInstance();
+
+    if (prefs.getBool('recordatorio_manana_activo') ?? false) {
+      final minutos = prefs.getInt('recordatorio_manana_minutos') ?? 7 * 60;
+      await NotificacionesService.instance.programarRecordatorioDiario(
+        id: idRecordatorioManana,
+        hora: TimeOfDay(hour: minutos ~/ 60, minute: minutos % 60),
+        titulo: 'Momento de respirar',
+        cuerpo: 'Tu sesión de respiración de la mañana te espera 🌬️',
+      );
+    }
+
+    if (prefs.getBool('recordatorio_noche_activo') ?? false) {
+      final minutos = prefs.getInt('recordatorio_noche_minutos') ?? 20 * 60;
+      await NotificacionesService.instance.programarRecordatorioDiario(
+        id: idRecordatorioNoche,
+        hora: TimeOfDay(hour: minutos ~/ 60, minute: minutos % 60),
+        titulo: 'Momento de respirar',
+        cuerpo: 'Cierra el día con tu sesión de respiración 🌙',
+      );
+    }
   }
 
   Future<void> _aceptar() async {
